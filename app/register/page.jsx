@@ -1,11 +1,14 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
-import { generateReferralCode } from '@/utils/referral'
+// если у тебя есть утилита генерации кода — подключи, иначе опусти
+// import { generateReferralCode } from '@/utils/referral'
 
-export default function RegisterPage() {
+// Подсказываем Next.js не пререндерить страницу на билде
+export const dynamic = 'force-dynamic'
+
+function RegisterInner() {
   const router = useRouter()
   const search = useSearchParams()
   const [loading, setLoading] = useState(false)
@@ -17,39 +20,21 @@ export default function RegisterPage() {
     if (ref) setRefCodeFromUrl(ref.trim())
   }, [search])
 
-  const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v||'').toLowerCase())
-  const isValidPassword = (p) => /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(p||'')
+  const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v || '').toLowerCase())
+  const isValidPassword = (p) => /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(p || '')
 
-  // генерируем уникальный referral_code (проверяем в БД)
-  const createUniqueReferralCode = async () => {
-    // до 10 попыток с разными кодами
-    for (let i = 0; i < 10; i++) {
-      const code = generateReferralCode()
-      const { data } = await supabase.from('profiles')
-        .select('id').eq('referral_code', code).limit(1)
-      if (!data || data.length === 0) return code
-    }
-    // fallback
-    return generateReferralCode(8)
-  }
-
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value })
+  const handleChange = (e) => setForm((s) => ({ ...s, [e.target.name]: e.target.value }))
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     if (!form.name || !form.phone || !form.email || !form.password) {
-      alert('Заполните все поля!')
-      return
+      alert('Заполните все поля'); return
     }
     if (!isValidEmail(form.email)) {
-      alert('Некорректный e-mail')
-      return
+      alert('Некорректный e-mail'); return
     }
     if (!isValidPassword(form.password)) {
-      alert('Пароль: минимум 8 символов, буква и цифра')
-      return
+      alert('Пароль: минимум 8 символов, буква и цифра'); return
     }
 
     setLoading(true)
@@ -59,13 +44,9 @@ export default function RegisterPage() {
       email: form.email,
       password: form.password,
     })
-    if (error) {
-      setLoading(false)
-      alert(error.message)
-      return
-    }
+    if (error) { setLoading(false); alert(error.message); return }
 
-    // 2) ищем пригласителя по коду (если пришли по ссылке)
+    // 2) ищем пригласителя по коду, если пришли по ссылке
     let referrerId = null
     if (refCodeFromUrl) {
       const { data: parent } = await supabase
@@ -76,8 +57,9 @@ export default function RegisterPage() {
       if (parent?.id) referrerId = parent.id
     }
 
-    // 3) генерим свой реф.код
-    const myCode = await createUniqueReferralCode()
+    // 3) генерируем свой реф.код (простой вариант)
+    const myCode = Math.random().toString(36).slice(2, 8).toUpperCase()
+    // если у тебя есть функция generateReferralCode() и проверка уникальности — замени на неё
 
     // 4) вставляем профиль
     if (data.user) {
@@ -91,22 +73,40 @@ export default function RegisterPage() {
     }
 
     setLoading(false)
-    alert('Регистрация успешна! Подтвердите e-mail.')
+    alert('Регистрация успешна! Подтвердите e-mail и войдите.')
     router.push('/login')
   }
 
   return (
-    <main className="flex items-center justify-center min-h-screen bg-gray-50">
-      <form onSubmit={handleSubmit} className="card p-8 w-full max-w-md space-y-4">
-        <h1 className="text-2xl font-semibold text-center">Регистрация</h1>
-        <input className="input" placeholder="Имя" name="name" value={form.name} onChange={handleChange} required />
-        <input className="input" placeholder="Телефон" name="phone" value={form.phone} onChange={handleChange} required />
-        <input className="input" placeholder="E-mail" type="email" name="email" value={form.email} onChange={handleChange} required />
-        <input className="input" placeholder="Пароль" type="password" name="password" value={form.password} onChange={handleChange} required />
-        <button className="btn btn-primary w-full" disabled={loading}>
-          {loading ? 'Загрузка…' : 'Зарегистрироваться'}
-        </button>
-      </form>
+    <main className="min-h-screen pt-16 container-page py-8">
+      <div className="max-w-md mx-auto card p-8">
+        <h1 className="text-2xl font-semibold text-center mb-6">Регистрация</h1>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input className="input" placeholder="Имя" name="name" value={form.name} onChange={handleChange} required />
+          <input className="input" placeholder="Телефон" name="phone" value={form.phone} onChange={handleChange} required />
+          <input className="input" placeholder="E-mail" type="email" name="email" value={form.email} onChange={handleChange} required />
+          <input className="input" placeholder="Пароль" type="password" name="password" value={form.password} onChange={handleChange} required />
+
+          <button className="btn btn-primary w-full" disabled={loading}>
+            {loading ? 'Загрузка…' : 'Зарегистрироваться'}
+          </button>
+        </form>
+      </div>
     </main>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen pt-16 container-page py-8">
+          <div className="max-w-md mx-auto card p-8">Загрузка…</div>
+        </main>
+      }
+    >
+      <RegisterInner />
+    </Suspense>
   )
 }
