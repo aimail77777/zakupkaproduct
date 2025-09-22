@@ -1,0 +1,39 @@
+/* Tailwind v4 */
+@import "tailwindcss";
+
+/* Токены темы (v4): можно объявлять прямо в CSS */
+@theme {
+  --color-brand: #2F80ED;
+  --color-brand-dark: #1C6DD0;
+  --color-brand-light: #EAF2FF;
+}
+
+/* Базовые утилиты для проекта */
+:root { --bg: #f7f8fa; }
+html, body { height: 100%; }
+body { @apply bg-[var(--bg)] text-gray-900; }
+
+.container-page { @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8; }
+.card-с { @apply bg-white rounded-2xl shadow-md border border-gray-100 transition-transform hover:-translate-y-0.5; }
+.btn { @apply inline-flex items-center justify-center rounded-lg px-3.5 py-2.5 text-sm font-medium transition; }
+.btn-primary { @apply bg-brand text-white hover:bg-brand-dark; }
+.btn-ghost { @apply bg-white border border-gray-200 hover:bg-gray-50; }
+
+/* Авторизаяция */
+.input {
+  @apply w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none;
+}
+
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition;
+}
+.btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700;
+}
+.btn-ghost {
+  @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+}
+
+.card {
+  @apply bg-white rounded-2xl shadow p-4;
+}
