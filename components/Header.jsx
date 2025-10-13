@@ -3,22 +3,61 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useEffect, useState, useRef } from 'react'
+import { getCartCount } from '@/utils/cart'
 
 export default function Header() {
   const pathname = usePathname()
   const router = useRouter()
   const [userEmail, setUserEmail] = useState(null)
   const [open, setOpen] = useState(false)
+  const [cartCount, setCartCount] = useState(0)
   const dropdownRef = useRef(null)
 
-  // Получаем пользователя из Supabase
+  // Получаем пользователя из Supabase и слушаем изменения авторизации
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUserEmail(user?.email || null)
     }
     fetchUser()
+
+    // Слушаем изменения авторизации в реальном времени
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email)
+        setUserEmail(session?.user?.email || null)
+        
+        // Если пользователь вошел, перенаправляем на главную
+        if (event === 'SIGNED_IN' && session?.user) {
+          router.push('/')
+        }
+        
+        // Если пользователь вышел, перенаправляем на логин
+        if (event === 'SIGNED_OUT') {
+          router.push('/login')
+        }
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [router])
+
+  // Загружаем количество товаров в корзине
+  useEffect(() => {
+    setCartCount(getCartCount())
   }, [pathname])
+
+  // Слушаем события изменения корзины
+  useEffect(() => {
+    const handleCartChange = () => {
+      setCartCount(getCartCount())
+    }
+    
+    // Слушаем кастомное событие cartChanged
+    window.addEventListener('cartChanged', handleCartChange)
+    
+    return () => window.removeEventListener('cartChanged', handleCartChange)
+  }, [])
 
   // Закрываем выпадающее меню при клике вне
   useEffect(() => {
@@ -52,13 +91,23 @@ export default function Header() {
 
         {/* Навигация */}
         <nav className="flex items-center gap-3">
-          {/* Показываем "Кабинет" только если пользователь вошёл */}
+          {/* Корзина - только для авторизованных */}
           {userEmail && (
             <Link
-              href="/cabinet"
-              className="btn btn-ghost hover:text-blue-600 transition"
+              href="/buy"
+              className="relative btn btn-ghost hover:text-blue-600 transition"
+              title="Корзина"
             >
-              Кабинет
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <circle cx="8" cy="21" r="1"/>
+                <circle cx="19" cy="21" r="1"/>
+                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+              </svg>
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
             </Link>
           )}
 
@@ -67,9 +116,9 @@ export default function Header() {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setOpen(!open)}
-                className="text-sm text-gray-700 hover:text-blue-600 font-medium flex items-center gap-1"
+                className="btn btn-ghost hover:text-blue-600 transition flex items-center gap-1"
               >
-                {userEmail.split('@')[0]}
+                Профиль
                 <svg
                   className={`w-4 h-4 transition-transform ${
                     open ? 'rotate-180' : ''
@@ -90,11 +139,18 @@ export default function Header() {
               {open && (
                 <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
                   <Link
+                    href="/cabinet"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => setOpen(false)}
+                  >
+                    Кабинет
+                  </Link>
+                  <Link
                     href="/profile"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     onClick={() => setOpen(false)}
                   >
-                    Профиль
+                    Мои данные
                   </Link>
                   <button
                     onClick={handleLogout}

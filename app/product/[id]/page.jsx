@@ -10,6 +10,7 @@ export default function ProductPage() {
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [qty, setQty] = useState(1)
+  const [user, setUser] = useState(null)
 
   useEffect(() => {
     let mounted = true
@@ -26,6 +27,15 @@ export default function ProductPage() {
     })()
     return () => { mounted = false }
   }, [id])
+
+  // Загружаем пользователя
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    fetchUser()
+  }, [])
 
   if (loading) {
     return (
@@ -150,6 +160,11 @@ export default function ProductPage() {
             {/* Передаём id и qty в корзину */}
             <button
               onClick={() => { 
+                // Если пользователь не авторизован, перенаправляем на логин
+                if (!user) {
+                  router.push('/login')
+                  return
+                }
                 addToCart(product.id, qty)
                 router.push('/buy')
               }}
@@ -175,6 +190,11 @@ export default function ProductPage() {
           <div className="font-semibold text-sm">{price ? `${price} ₸` : '—'}</div>
           <button
             onClick={() => { 
+              // Если пользователь не авторизован, перенаправляем на логин
+              if (!user) {
+                router.push('/login')
+                return
+              }
               addToCart(product.id, qty)
               router.push('/buy')
             }}

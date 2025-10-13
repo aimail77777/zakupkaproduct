@@ -1,12 +1,32 @@
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { addToCart } from '@/utils/cart'
+import { supabase } from '@/lib/supabase'
+import { useEffect, useState } from 'react'
 
 export default function ProductCard({ product, onAddToCart }) {
   const { id, title, price, image_url, description } = product || {}
+  const router = useRouter()
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    fetchUser()
+  }, [])
 
   const handleAddToCart = (e) => {
     e.preventDefault()
     e.stopPropagation()
+    
+    // Если пользователь не авторизован, перенаправляем на логин
+    if (!user) {
+      router.push('/login')
+      return
+    }
+    
     addToCart(id, 1)
     if (onAddToCart) {
       onAddToCart()

@@ -108,9 +108,6 @@ export default function ProfilePage() {
 
   // реф. код для блока
   const [referralCode, setReferralCode] = useState(null)
-  
-  // состояние привязки карты
-  const [cardAttached, setCardAttached] = useState(false)
 
   /* ---------- загрузка пользователя и профиля ---------- */
   useEffect(() => {
@@ -210,9 +207,7 @@ export default function ProfilePage() {
 
   /* ---------- привязка карты ---------- */
   const attachCard = () => {
-    // Здесь будет интеграция с платежной системой
-    alert('Функция привязки карты будет реализована в следующих версиях')
-    // setCardAttached(true)
+    alert('Функция привязки карты будет добавлена в следующих версиях')
   }
 
   if (loading) {
@@ -366,27 +361,13 @@ export default function ProfilePage() {
               </div>
             </div>
             
-            <div className="space-y-3">
-              <div className="bg-gray-50 rounded-lg p-4 border-2 border-dashed border-gray-200">
-                <div className="text-center">
-                  <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  <p className="text-sm text-gray-600 mb-3">Карта не привязана</p>
-                  <button 
-                    className="btn btn-primary w-full"
-                    onClick={attachCard}
-                  >
-                    Привязать карту
-                  </button>
-                </div>
-              </div>
-              
-              <div className="text-xs text-gray-500">
-                <p>• Безопасное хранение данных</p>
-                <p>• Быстрая оплата заказов</p>
-                <p>• Возврат средств на карту</p>
-              </div>
+            <div>
+              <button 
+                className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                onClick={attachCard}
+              >
+                Привязать карту
+              </button>
             </div>
           </section>
 
