@@ -24,21 +24,18 @@ function getUserLevel(count) {
 }
 
 export default function CabinetPage() {
-  const router = useRouter()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [purchases, setPurchases] = useState([])
 
-  // 1) Авторизация
+  // 1) Загружаем пользователя
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        router.push('/login')
-      } else {
-        setUser(data.user)
-      }
-    })
-  }, [router])
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    fetchUser()
+  }, [])
 
   // 2) Данные покупок
   useEffect(() => {
@@ -87,21 +84,21 @@ export default function CabinetPage() {
   }
 
   return (
-    <main className="pt-16 container-page py-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold">Личный кабинет</h1>
-        <p className="text-gray-500">Ваши покупки и статус лояльности</p>
+    <main className="pt-16 container-page py-4 sm:py-8 px-4">
+      <header className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-semibold">Личный кабинет</h1>
+        <p className="text-sm sm:text-base text-gray-500">Ваши покупки и статус лояльности</p>
       </header>
 
       {/* Верхние карточки со статусом */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {/* Уровень и прогресс */}
-        <div className="card p-5">
+        <div className="card p-4 sm:p-5">
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-sm text-gray-500">Ваш уровень</div>
-              <div className="text-lg font-semibold">
-                {stats.label} <span className="text-gray-500">(уровень {stats.level})</span>
+              <div className="text-xs sm:text-sm text-gray-500">Ваш уровень</div>
+              <div className="text-base sm:text-lg font-semibold">
+                {stats.label} <span className="text-gray-500 text-sm">(уровень {stats.level})</span>
               </div>
             </div>
             <span className="px-2 py-1 text-xs rounded bg-blue-50 text-blue-700 border border-blue-100">
@@ -127,9 +124,9 @@ export default function CabinetPage() {
         </div>
 
         {/* Всего потрачено */}
-        <div className="card p-5">
-          <div className="text-sm text-gray-500">Всего потрачено</div>
-          <div className="text-2xl font-bold mt-1">
+        <div className="card p-4 sm:p-5">
+          <div className="text-xs sm:text-sm text-gray-500">Всего потрачено</div>
+          <div className="text-xl sm:text-2xl font-bold mt-1">
             {stats.total.toLocaleString('ru-RU')} <span className="text-lg text-gray-600">₸</span>
           </div>
           <div className="text-xs text-gray-500 mt-2">
@@ -141,42 +138,42 @@ export default function CabinetPage() {
         </div>
 
         {/* Быстрые действия */}
-        <div className="card p-5 flex flex-col justify-between">
+        <div className="card p-4 sm:p-5 flex flex-col justify-between">
           <div>
-            <div className="text-sm text-gray-500">Быстрые действия</div>
-            <div className="text-lg font-semibold mt-1">Продолжить покупки</div>
-            <p className="text-sm text-gray-500 mt-1">Вернитесь в каталог и добавьте новые товары.</p>
+            <div className="text-xs sm:text-sm text-gray-500">Быстрые действия</div>
+            <div className="text-base sm:text-lg font-semibold mt-1">Продолжить покупки</div>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Вернитесь в каталог и добавьте новые товары.</p>
           </div>
           <div className="mt-3">
-            <Link href="/" className="btn btn-primary w-full">В каталог</Link>
+            <Link href="/" className="btn btn-primary w-full text-sm sm:text-base py-2">В каталог</Link>
           </div>
         </div>
       </section>
 
       {/* Покупки */}
-      <section className="mt-8">
+      <section className="mt-6 sm:mt-8">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Мои покупки</h2>
+          <h2 className="text-base sm:text-lg font-semibold">Мои покупки</h2>
           {purchases.length > 0 && (
-            <div className="text-sm text-gray-500">{purchases.length} шт.</div>
+            <div className="text-xs sm:text-sm text-gray-500">{purchases.length} шт.</div>
           )}
         </div>
 
         {purchases.length === 0 ? (
-          <div className="card p-8 text-center">
-            <div className="text-lg font-medium">Пока нет покупок</div>
-            <p className="text-gray-500 mt-1">Начните с каталога — выберите первый товар и получите уровень.</p>
+          <div className="card p-6 sm:p-8 text-center">
+            <div className="text-base sm:text-lg font-medium">Пока нет покупок</div>
+            <p className="text-sm sm:text-base text-gray-500 mt-1">Начните с каталога — выберите первый товар и получите уровень.</p>
             <div className="mt-4">
-              <Link href="/" className="btn btn-primary">Перейти в каталог</Link>
+              <Link href="/" className="btn btn-primary text-sm sm:text-base py-2">Перейти в каталог</Link>
             </div>
           </div>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-2 sm:space-y-3">
             {purchases.map((p) => (
-              <li key={p.id} className="card p-4">
-                <div className="flex items-center gap-4">
+              <li key={p.id} className="card p-3 sm:p-4">
+                <div className="flex items-center gap-3 sm:gap-4">
                   {/* превью товара */}
-                  <div className="relative w-20 h-20 rounded-md overflow-hidden bg-gray-50 flex-shrink-0">
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden bg-gray-50 flex-shrink-0">
                     {p.products?.image_url ? (
                       <img
                         src={p.products.image_url}
@@ -192,8 +189,8 @@ export default function CabinetPage() {
 
                   {/* описание */}
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium truncate">{p.products?.title || 'Товар'}</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="font-medium truncate text-sm sm:text-base">{p.products?.title || 'Товар'}</div>
+                    <div className="text-xs sm:text-sm text-gray-500">
                       {new Date(p.created_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                       {' • '}
                       Кол-во: <b>{p.qty || 1}</b>
@@ -202,7 +199,7 @@ export default function CabinetPage() {
 
                   {/* сумма */}
                   <div className="text-right">
-                    <div className="font-semibold">
+                    <div className="font-semibold text-sm sm:text-base">
                       {(Number(p.amount) || 0).toLocaleString('ru-RU')} ₸
                     </div>
                     {p.products?.price ? (
@@ -220,3 +217,4 @@ export default function CabinetPage() {
     </main>
   )
 }
+

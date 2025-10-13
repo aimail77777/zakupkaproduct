@@ -108,6 +108,9 @@ export default function ProfilePage() {
 
   // реф. код для блока
   const [referralCode, setReferralCode] = useState(null)
+  
+  // состояние привязки карты
+  const [cardAttached, setCardAttached] = useState(false)
 
   /* ---------- загрузка пользователя и профиля ---------- */
   useEffect(() => {
@@ -203,6 +206,13 @@ export default function ProfilePage() {
     setPwd(''); setPwd2('')
     setPwdOpen(false)
     setErrors((e) => ({ ...e, pwd: undefined, pwd2: undefined }))
+  }
+
+  /* ---------- привязка карты ---------- */
+  const attachCard = () => {
+    // Здесь будет интеграция с платежной системой
+    alert('Функция привязки карты будет реализована в следующих версиях')
+    // setCardAttached(true)
   }
 
   if (loading) {
@@ -340,8 +350,46 @@ export default function ProfilePage() {
           )}
         </section>
 
-        {/* Правая колонка: рефералы */}
-        <section className="lg:col-span-1">
+        {/* Правая колонка: рефералы и карта */}
+        <section className="lg:col-span-1 space-y-6">
+          {/* Привязка карты */}
+          <section className="card p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Банковская карта</h2>
+                <p className="text-sm text-gray-500">Для быстрых платежей</p>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="bg-gray-50 rounded-lg p-4 border-2 border-dashed border-gray-200">
+                <div className="text-center">
+                  <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <p className="text-sm text-gray-600 mb-3">Карта не привязана</p>
+                  <button 
+                    className="btn btn-primary w-full"
+                    onClick={attachCard}
+                  >
+                    Привязать карту
+                  </button>
+                </div>
+              </div>
+              
+              <div className="text-xs text-gray-500">
+                <p>• Безопасное хранение данных</p>
+                <p>• Быстрая оплата заказов</p>
+                <p>• Возврат средств на карту</p>
+              </div>
+            </div>
+          </section>
+
           <ReferralBlock profileId={user?.id} referralCode={referralCode} />
         </section>
       </div>
