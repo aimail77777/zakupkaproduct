@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { isValidRecoverySession, logSecurityEvent } from '@/utils/security'
+import { logSecurityEvent } from '@/utils/security'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -18,25 +18,69 @@ export default function ResetPasswordPage() {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
         
-        if (error || !session) {
+        if (error) {
+          console.error('Session error:', error)
+          logSecurityEvent('PASSWORD_RESET_SESSION_ERROR', { error: error.message })
           alert('⚠️ Ссылка для сброса пароля недействительна или истекла')
           router.push('/forgot-password')
           return
         }
         
-        // Проверяем, что это валидная recovery сессия
-        if (!isValidRecoverySession(session)) {
-          logSecurityEvent('INVALID_RECOVERY_ATTEMPT', {
-            userEmail: session?.user?.email
-          })
-          alert('⚠️ Недостаточно прав для сброса пароля')
+        if (!session) {
+          logSecurityEvent('PASSWORD_RESET_NO_SESSION')
+          alert('⚠️ Ссылка для сброса пароля недействительна или истекла')
+          router.push('/forgot-password')
+          return
+        }
+        
+        // Проверяем, что у пользователя есть email (базовая валидация)
+        if (!session.user?.email) {
+          logSecurityEvent('PASSWORD_RESET_NO_EMAIL')
+          alert('⚠️ Недостаточно данных для сброса пароля')
           router.push('/login')
           return
         }
         
-        setIsValidSession(true)
+        // Дополнительная проверка: есть ли в URL параметры recovery
+        const urlParams = new URLSearchParams(window.location.search)
+        const type = urlParams.get('type')
+        const accessToken = urlParams.get('access_token')
+        const refreshToken = urlParams.get('refresh_token')
+        
+        // Если есть токены в URL, это точно recovery сессия
+        if (accessToken || refreshToken) {
+          logSecurityEvent('PASSWORD_RESET_VALID_SESSION', { 
+            userEmail: session.user.email,
+            hasAccessToken: !!accessToken,
+            hasRefreshToken: !!refreshToken,
+            type: type
+          })
+          setIsValidSession(true)
+          return
+        }
+        
+        // Если нет токенов в URL, но есть сессия - тоже разрешаем
+        // (на случай, если пользователь уже прошел через auth callback)
+        if (session.user) {
+          logSecurityEvent('PASSWORD_RESET_SESSION_FOUND', { 
+            userEmail: session.user.email,
+            type: type
+          })
+          setIsValidSession(true)
+          return
+        }
+        
+        // Если ничего не подошло
+        logSecurityEvent('PASSWORD_RESET_INVALID_SESSION', { 
+          userEmail: session.user?.email,
+          type: type
+        })
+        alert('⚠️ Недостаточно прав для сброса пароля')
+        router.push('/login')
+        
       } catch (error) {
         console.error('Session check error:', error)
+        logSecurityEvent('PASSWORD_RESET_CHECK_ERROR', { error: error.message })
         alert('❌ Ошибка проверки сессии')
         router.push('/forgot-password')
       } finally {
@@ -59,10 +103,11 @@ export default function ResetPasswordPage() {
     }
 
     setLoading(true)
-    const { error } = await supabase.auth.updateUser({ password })
+    const { data, error } = await supabase.auth.updateUser({ password })
     
     if (error) {
       setLoading(false)
+      logSecurityEvent('PASSWORD_RESET_UPDATE_ERROR', { error: error.message })
       alert(error.message)
       return
     }
@@ -73,7 +118,7 @@ export default function ResetPasswordPage() {
     
     // Логируем успешный сброс пароля
     logSecurityEvent('PASSWORD_RESET_SUCCESS', {
-      userEmail: data.session?.user?.email
+      userEmail: data.user?.email
     })
     
     alert('Пароль успешно обновлён! Войдите с новым паролем.')

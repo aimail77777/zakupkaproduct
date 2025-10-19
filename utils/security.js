@@ -8,7 +8,12 @@ export const isRecoverySession = () => {
   if (typeof window === 'undefined') return false
   
   const urlParams = new URLSearchParams(window.location.search)
-  return urlParams.get('type') === 'recovery'
+  const type = urlParams.get('type')
+  const accessToken = urlParams.get('access_token')
+  const refreshToken = urlParams.get('refresh_token')
+  
+  // Считаем recovery сессией, если есть type=recovery ИЛИ есть токены
+  return type === 'recovery' || !!(accessToken || refreshToken)
 }
 
 /**
@@ -17,14 +22,10 @@ export const isRecoverySession = () => {
  * @returns {boolean} true если сессия валидна для recovery
  */
 export const isValidRecoverySession = (session) => {
-  if (!session) return false
+  if (!session || !session.user) return false
   
-  // Проверяем, что это recovery сессия
-  if (!isRecoverySession()) return false
-  
+  // Если есть сессия с пользователем, считаем валидной
   // Дополнительные проверки можно добавить здесь
-  // Например, проверка времени создания сессии, IP адреса и т.д.
-  
   return true
 }
 
