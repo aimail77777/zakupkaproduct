@@ -25,8 +25,18 @@ export default function AuthCallback() {
           
           if (type === 'recovery') {
             // Это сброс пароля - НЕ авторизуем автоматически
-            alert('✅ Ссылка для сброса пароля подтверждена! Теперь введите новый пароль.')
-            router.push('/reset-password')
+            // Перенаправляем на reset-password с токенами из URL
+            const urlParams = new URLSearchParams(window.location.search)
+            const accessToken = urlParams.get('access_token')
+            const refreshToken = urlParams.get('refresh_token')
+            
+            if (accessToken && refreshToken) {
+              // Перенаправляем с токенами
+              router.push(`/reset-password?access_token=${accessToken}&refresh_token=${refreshToken}&type=recovery`)
+            } else {
+              // Если нет токенов, просто перенаправляем
+              router.push('/reset-password')
+            }
             return
           }
           
