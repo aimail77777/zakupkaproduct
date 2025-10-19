@@ -35,7 +35,7 @@ export default function ProductCard({ product, onAddToCart }) {
 
   return (
     // убираем отступы у обёртки, иначе изображение не выйдет в край
-    <div className="card-с overflow-hidden flex flex-col p-0 h-full">
+    <div className="card overflow-hidden flex flex-col p-0 h-full">
       {/* Фото — во всю ширину карточки, без полей */}
       <div className="relative w-full aspect-[4/5] sm:aspect-[4/5] object-cover bg-gray-50 p-0">
         {image_url ? (

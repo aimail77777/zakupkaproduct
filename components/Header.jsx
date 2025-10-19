@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useEffect, useState, useRef } from 'react'
 import { getCartCount } from '@/utils/cart'
+import { canShowUserProfile, logSecurityEvent } from '@/utils/security'
 
 export default function Header() {
   const pathname = usePathname()
@@ -25,16 +26,28 @@ export default function Header() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email)
-        setUserEmail(session?.user?.email || null)
         
-        // Если пользователь вошел, перенаправляем на главную
+        // Проверяем тип сессии для дополнительной безопасности
         if (event === 'SIGNED_IN' && session?.user) {
-          router.push('/')
-        }
-        
-        // Если пользователь вышел, перенаправляем на логин
-        if (event === 'SIGNED_OUT') {
-          router.push('/login')
+          // Проверяем, можно ли показать профиль пользователя
+          if (canShowUserProfile(session)) {
+            // Обычная авторизация
+            setUserEmail(session.user.email)
+            logSecurityEvent('USER_SIGNED_IN', {
+              userEmail: session.user.email
+            })
+            router.push('/')
+          } else {
+            // Recovery сессия - не показываем профиль
+            setUserEmail(null)
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUserEmail(null)
+          logSecurityEvent('USER_SIGNED_OUT')
+          // Не перенаправляем автоматически при выходе, чтобы не мешать пользователю
+        } else {
+          // Обновляем email для других событий
+          setUserEmail(session?.user?.email || null)
         }
       }
     )
@@ -81,12 +94,12 @@ export default function Header() {
       <div className="container-page h-16 flex items-center justify-between">
         {/* Логотип */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-brand text-white grid place-items-center font-bold">
-            Z+
+          <div className="h-8 px-3 rounded-lg flex items-center font-medium" style={{backgroundColor: 'var(--color-gray-200)'}}>
+            <span className="text-sm font-semibold">
+              <span className="text-blue-500 font-bold">lvl</span>
+              <span className="text-gray-700">mart</span>
+            </span>
           </div>
-          <span className="font-semibold tracking-tight text-gray-800">
-            Zakupka+
-          </span>
         </Link>
 
         {/* Навигация */}

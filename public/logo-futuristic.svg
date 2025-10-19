@@ -1,0 +1,40 @@
+<svg width="150" height="40" viewBox="0 0 150 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="futuristicGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#6366F1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06B6D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10B981;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Фон -->
+  <rect width="150" height="40" rx="12" fill="url(#futuristicGradient)"/>
+  
+  <!-- Основной текст -->
+  <text x="12" y="26" font-family="'SF Pro Display', Arial, sans-serif" font-size="18" font-weight="600" fill="white" filter="url(#glow)">
+    lvlmart
+  </text>
+  
+  <!-- Неоновое подчеркивание -->
+  <rect x="12" y="28" width="70" height="2" rx="1" fill="url(#neonGradient)" filter="url(#glow)"/>
+  
+  <!-- Футуристические элементы -->
+  <rect x="100" y="8" width="8" height="8" rx="2" fill="url(#neonGradient)" filter="url(#glow)"/>
+  <rect x="110" y="12" width="6" height="6" rx="1" fill="white" opacity="0.8"/>
+  <rect x="118" y="16" width="4" height="4" rx="0.5" fill="white" opacity="0.6"/>
+  
+  <!-- Дополнительные детали -->
+  <circle cx="130" cy="12" r="3" fill="url(#neonGradient)" filter="url(#glow)"/>
+  <circle cx="135" cy="18" r="2" fill="white" opacity="0.7"/>
+</svg>

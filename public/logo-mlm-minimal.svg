@@ -1,0 +1,27 @@
+<svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="levelGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Фон -->
+  <rect width="120" height="32" rx="6" fill="var(--color-gray-200)"/>
+  
+  <!-- lvl - выделенная часть (уровни) -->
+  <text x="6" y="21" font-family="'Inter', 'SF Pro Display', Arial, sans-serif" font-size="14" font-weight="700" fill="url(#levelGradient)">
+    lvl
+  </text>
+  
+  <!-- mart - обычная часть -->
+  <text x="36" y="21" font-family="'Inter', 'SF Pro Display', Arial, sans-serif" font-size="14" font-weight="400" fill="#374151">
+    mart
+  </text>
+  
+  <!-- Ecommerce индикатор - корзина -->
+  <rect x="100" y="8" width="12" height="8" rx="1" fill="none" stroke="#10B981" stroke-width="1"/>
+  <rect x="102" y="10" width="2" height="2" rx="0.5" fill="#10B981"/>
+  <rect x="106" y="10" width="2" height="2" rx="0.5" fill="#10B981"/>
+  <rect x="110" y="10" width="2" height="2" rx="0.5" fill="#10B981"/>
+</svg>

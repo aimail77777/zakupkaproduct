@@ -19,8 +19,26 @@ export default function AuthCallback() {
         }
 
         if (data.session) {
-          // Пользователь успешно подтвердил email
-          alert('✅ Email успешно подтвержден! Добро пожаловать!')
+          // Проверяем тип события из URL параметров
+          const urlParams = new URLSearchParams(window.location.search)
+          const type = urlParams.get('type')
+          
+          if (type === 'recovery') {
+            // Это сброс пароля - НЕ авторизуем автоматически
+            alert('✅ Ссылка для сброса пароля подтверждена! Теперь введите новый пароль.')
+            router.push('/reset-password')
+            return
+          }
+          
+          if (type === 'signup') {
+            // Это подтверждение регистрации
+            alert('✅ Email успешно подтвержден! Добро пожаловать в lvlmart!')
+            router.push('/')
+            return
+          }
+          
+          // Обычное подтверждение email или вход
+          alert('✅ Авторизация успешна! Добро пожаловать!')
           router.push('/')
         } else {
           // Нет сессии, перенаправляем на логин

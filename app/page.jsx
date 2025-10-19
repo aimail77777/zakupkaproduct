@@ -67,7 +67,7 @@ export default function HomePage() {
       <section className="mb-6 sm:mb-8">
         <div className="rounded-xl sm:rounded-2xl bg-gradient-to-r from-brand to-blue-500 text-white p-4 sm:p-6 lg:p-8">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tight leading-tight">
-            Zakupka+ — просто покупать, приятно получать
+            lvlmart — просто покупать, приятно получать
           </h1>
           <p className="mt-2 text-white/90 text-sm sm:text-base max-w-2xl">
             Небольшой, но отборный ассортимент. Покупайте блоки товаров, копите уровни и открывайте бонусы.

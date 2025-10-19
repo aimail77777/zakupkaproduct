@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getResetPasswordUrl } from '@/utils/url'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -14,8 +15,12 @@ export default function ForgotPasswordPage() {
       return
     }
     setLoading(true)
+    
+    // Получаем динамический URL для сброса пароля
+    const resetUrl = getResetPasswordUrl()
+    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'http://localhost:3000/reset-password', // страница смены пароля
+      redirectTo: resetUrl, // страница смены пароля
     })
     setLoading(false)
 

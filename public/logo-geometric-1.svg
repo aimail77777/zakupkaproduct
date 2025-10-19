@@ -1,0 +1,51 @@
+<svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="geometricGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Геометрический фон - прямоугольники -->
+  <rect width="32" height="32" fill="var(--color-gray-200)"/>
+  <rect x="32" width="88" height="32" fill="var(--color-gray-200)"/>
+  
+  <!-- Геометрическая буква L -->
+  <rect x="4" y="4" width="4" height="24" fill="url(#geometricGradient)"/>
+  <rect x="4" y="24" width="20" height="4" fill="url(#geometricGradient)"/>
+  
+  <!-- Геометрические элементы для остальных букв -->
+  <rect x="28" y="8" width="3" height="16" fill="#374151"/>
+  <rect x="28" y="8" width="12" height="3" fill="#374151"/>
+  <rect x="28" y="21" width="12" height="3" fill="#374151"/>
+  
+  <!-- V -->
+  <rect x="42" y="8" width="3" height="8" fill="#374151"/>
+  <rect x="50" y="8" width="3" height="8" fill="#374151"/>
+  <rect x="46" y="16" width="3" height="8" fill="#374151"/>
+  
+  <!-- L -->
+  <rect x="56" y="8" width="3" height="16" fill="#374151"/>
+  <rect x="56" y="21" width="12" height="3" fill="#374151"/>
+  
+  <!-- M -->
+  <rect x="72" y="8" width="3" height="16" fill="#374151"/>
+  <rect x="80" y="8" width="3" height="16" fill="#374151"/>
+  <rect x="76" y="8" width="3" height="8" fill="#374151"/>
+  
+  <!-- A -->
+  <rect x="88" y="8" width="3" height="16" fill="#374151"/>
+  <rect x="88" y="8" width="12" height="3" fill="#374151"/>
+  <rect x="88" y="16" width="12" height="3" fill="#374151"/>
+  <rect x="97" y="8" width="3" height="16" fill="#374151"/>
+  
+  <!-- R -->
+  <rect x="104" y="8" width="3" height="16" fill="#374151"/>
+  <rect x="104" y="8" width="8" height="3" fill="#374151"/>
+  <rect x="104" y="16" width="8" height="3" fill="#374151"/>
+  <rect x="110" y="12" width="3" height="8" fill="#374151"/>
+  
+  <!-- T -->
+  <rect x="116" y="8" width="3" height="16" fill="#374151"/>
+  <rect x="112" y="8" width="12" height="3" fill="#374151"/>
+</svg>

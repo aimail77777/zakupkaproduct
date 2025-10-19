@@ -6,6 +6,7 @@
   --color-brand: #2F80ED;
   --color-brand-dark: #1C6DD0;
   --color-brand-light: #EAF2FF;
+  --color-gray-200: #E5E7EB;
 }
 
 /* Базовые утилиты для проекта */
@@ -14,7 +15,7 @@ html, body { height: 100%; }
 body { @apply bg-[var(--bg)] text-gray-900; }
 
 .container-page { @apply max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8; }
-.card-с { @apply bg-white rounded-xl sm:rounded-2xl shadow-md border border-gray-100 transition-transform hover:-translate-y-0.5; }
+.card { @apply bg-white rounded-xl sm:rounded-2xl shadow-md border border-gray-100 transition-transform hover:-translate-y-0.5; }
 .btn { @apply inline-flex items-center justify-center rounded-lg px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition; }
 .btn-primary { @apply bg-brand text-white hover:bg-brand-dark; }
 .btn-ghost { @apply bg-white border border-gray-200 hover:bg-gray-50; }

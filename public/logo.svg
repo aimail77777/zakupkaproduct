@@ -1,0 +1,27 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Градиент для tech стиля -->
+  <defs>
+    <linearGradient id="techGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1D4ED8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Фон с закругленными углами -->
+  <rect width="32" height="32" rx="8" fill="url(#techGradient)"/>
+  
+  <!-- Буква L в tech стиле -->
+  <path d="M8 8 L8 24 L20 24 L20 20 L12 20 L12 8 Z" fill="white"/>
+  
+  <!-- Tech акцент - маленький квадрат -->
+  <rect x="22" y="6" width="4" height="4" rx="1" fill="url(#accentGradient)"/>
+  
+  <!-- Дополнительные tech элементы -->
+  <rect x="24" y="10" width="2" height="2" rx="0.5" fill="white" opacity="0.7"/>
+  <rect x="24" y="13" width="2" height="2" rx="0.5" fill="white" opacity="0.5"/>
+</svg>

@@ -1,0 +1,23 @@
+<svg width="140" height="32" viewBox="0 0 140 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="levelAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Фон -->
+  <rect width="140" height="32" rx="6" fill="var(--color-gray-200)"/>
+  
+  <!-- Основной текст -->
+  <text x="8" y="21" font-family="'Inter', Arial, sans-serif" font-size="14" font-weight="500" fill="#374151">
+    lvlmart
+  </text>
+  
+  
+  <!-- Ecommerce индикатор -->
+  <rect x="90" y="18" width="16" height="6" rx="1" fill="none" stroke="#10B981" stroke-width="1"/>
+  <rect x="92" y="20" width="2" height="2" rx="0.5" fill="#10B981"/>
+  <rect x="96" y="20" width="2" height="2" rx="0.5" fill="#10B981"/>
+  <rect x="100" y="20" width="2" height="2" rx="0.5" fill="#10B981"/>
+</svg>
