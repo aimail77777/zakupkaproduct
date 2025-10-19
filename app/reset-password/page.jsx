@@ -144,49 +144,60 @@ export default function ResetPasswordPage() {
     setLoading(true)
     
     try {
-      // Если у нас есть токены, но нет активной сессии, создаем сессию
+      // Если у нас есть токены, но нет активной сессии, пробуем создать сессию
       if (accessToken && !userEmail) {
-        console.log('Creating session from tokens before password update...')
+        console.log('Attempting to create session from tokens before password update...')
         
-        try {
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken || ''
-          })
-          
-          if (error) {
-            console.error('Failed to create session for password update:', error)
-            logSecurityEvent('PASSWORD_RESET_SESSION_CREATION_FAILED', { error: error.message })
-            alert('⚠️ Не удалось создать сессию для сброса пароля. Попробуйте запросить новую ссылку.')
-            setLoading(false)
-            return
-          }
-          
-          if (data.session) {
-            console.log('Session created successfully for password update')
-            setUserEmail(data.session.user.email)
-            logSecurityEvent('PASSWORD_RESET_SESSION_CREATED_FOR_UPDATE', { 
-              userEmail: data.session.user.email
+        // Пробуем создать сессию только если есть оба токена
+        if (accessToken && refreshToken) {
+          try {
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            })
+            
+            if (data.session) {
+              console.log('Session created successfully for password update')
+              setUserEmail(data.session.user.email)
+              logSecurityEvent('PASSWORD_RESET_SESSION_CREATED_FOR_UPDATE', { 
+                userEmail: data.session.user.email
+              })
+            } else {
+              console.log('Session creation failed, trying alternative approach')
+              logSecurityEvent('PASSWORD_RESET_SESSION_FAILED_TRYING_ALTERNATIVE', { 
+                error: error?.message
+              })
+            }
+          } catch (sessionError) {
+            console.log('Session creation error, trying alternative approach:', sessionError)
+            logSecurityEvent('PASSWORD_RESET_SESSION_ERROR_TRYING_ALTERNATIVE', { 
+              error: sessionError.message
             })
           }
-        } catch (sessionError) {
-          console.error('Session creation error during password update:', sessionError)
-          logSecurityEvent('PASSWORD_RESET_SESSION_ERROR_DURING_UPDATE', { 
-            error: sessionError.message
+        } else {
+          console.log('Incomplete tokens, trying alternative approach')
+          logSecurityEvent('PASSWORD_RESET_INCOMPLETE_TOKENS_TRYING_ALTERNATIVE', { 
+            hasAccessToken: !!accessToken,
+            hasRefreshToken: !!refreshToken
           })
-          alert('⚠️ Ошибка создания сессии. Попробуйте запросить новую ссылку.')
-          setLoading(false)
-          return
         }
       }
       
-      // Теперь обновляем пароль
+      // Пробуем обновить пароль
+      console.log('Attempting password update...')
       const { data, error } = await supabase.auth.updateUser({ password })
       
       if (error) {
         setLoading(false)
+        console.error('Password update failed:', error)
         logSecurityEvent('PASSWORD_RESET_UPDATE_ERROR', { error: error.message })
-        alert(`Ошибка обновления пароля: ${error.message}`)
+        
+        // Если ошибка связана с сессией, предлагаем альтернативу
+        if (error.message.includes('session') || error.message.includes('Auth')) {
+          alert('⚠️ Проблема с авторизацией. Попробуйте запросить новую ссылку для сброса пароля.')
+        } else {
+          alert(`Ошибка обновления пароля: ${error.message}`)
+        }
         return
       }
 
@@ -203,6 +214,7 @@ export default function ResetPasswordPage() {
       router.push('/login')
     } catch (updateError) {
       setLoading(false)
+      console.error('Password update exception:', updateError)
       logSecurityEvent('PASSWORD_RESET_UPDATE_EXCEPTION', { error: updateError.message })
       alert(`Ошибка при обновлении пароля: ${updateError.message}`)
     }
