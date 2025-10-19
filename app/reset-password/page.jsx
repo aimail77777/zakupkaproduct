@@ -122,7 +122,16 @@ export default function ResetPasswordPage() {
       }
 
       // ВАЖНО: Принудительно выходим из сессии после сброса пароля
+      console.log('Forcing logout after password reset...')
       await supabase.auth.signOut()
+      
+      // Дополнительная проверка - убеждаемся, что пользователь разлогинен
+      const { data: sessionCheck } = await supabase.auth.getSession()
+      if (sessionCheck.session) {
+        console.log('Session still exists, forcing another logout...')
+        await supabase.auth.signOut()
+      }
+      
       setLoading(false)
       
       // Логируем успешный сброс пароля
@@ -131,7 +140,11 @@ export default function ResetPasswordPage() {
       })
       
       alert('Пароль успешно обновлён! Войдите с новым паролем.')
-      router.push('/login')
+      
+      // Небольшая задержка перед перенаправлением, чтобы убедиться, что logout завершен
+      setTimeout(() => {
+        router.push('/login')
+      }, 100)
     } catch (updateError) {
       setLoading(false)
       console.error('Password update exception:', updateError)
