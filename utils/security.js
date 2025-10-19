@@ -66,5 +66,13 @@ export const canShowUserProfile = (session) => {
     return false
   }
   
+  // Не показываем профиль на странице сброса пароля
+  if (typeof window !== 'undefined' && window.location.pathname === '/reset-password') {
+    logSecurityEvent('RESET_PASSWORD_PAGE_BLOCKED', {
+      userEmail: session.user?.email
+    })
+    return false
+  }
+  
   return true
 }

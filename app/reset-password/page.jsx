@@ -36,6 +36,16 @@ export default function ResetPasswordPage() {
             type: type
           })
           
+          // ВАЖНО: Немедленно выходим из любой активной сессии
+          // чтобы предотвратить автоматическую авторизацию
+          try {
+            console.log('Preventing auto-login by signing out immediately...')
+            await supabase.auth.signOut()
+            logSecurityEvent('PASSWORD_RESET_PREVENTED_AUTO_LOGIN')
+          } catch (logoutError) {
+            console.log('Logout error (expected):', logoutError)
+          }
+          
           // Разрешаем сброс пароля - Supabase сам обработает токены
           setIsValidSession(true)
           setCheckingSession(false)

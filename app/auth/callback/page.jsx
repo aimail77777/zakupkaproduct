@@ -25,6 +25,10 @@ export default function AuthCallback() {
           
           if (type === 'recovery') {
             // Это сброс пароля - НЕ авторизуем автоматически
+            // Сначала принудительно выходим из сессии
+            console.log('Recovery callback detected, signing out to prevent auto-login...')
+            await supabase.auth.signOut()
+            
             // Перенаправляем на reset-password с токенами из URL
             const urlParams = new URLSearchParams(window.location.search)
             const accessToken = urlParams.get('access_token')
