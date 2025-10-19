@@ -16,7 +16,30 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const checkSession = async () => {
       try {
+        // Сначала проверяем, есть ли токены в URL
+        const urlParams = new URLSearchParams(window.location.search)
+        const accessToken = urlParams.get('access_token')
+        const refreshToken = urlParams.get('refresh_token')
+        const type = urlParams.get('type')
+        
+        console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type })
+        
+        // Если есть токены в URL, это точно recovery сессия
+        if (accessToken || refreshToken) {
+          logSecurityEvent('PASSWORD_RESET_URL_TOKENS_FOUND', { 
+            hasAccessToken: !!accessToken,
+            hasRefreshToken: !!refreshToken,
+            type: type
+          })
+          setIsValidSession(true)
+          setCheckingSession(false)
+          return
+        }
+        
+        // Если нет токенов в URL, проверяем сессию
         const { data: { session }, error } = await supabase.auth.getSession()
+        
+        console.log('Session check:', { session: !!session, error: error?.message })
         
         if (error) {
           console.error('Session error:', error)
@@ -33,50 +56,18 @@ export default function ResetPasswordPage() {
           return
         }
         
-        // Проверяем, что у пользователя есть email (базовая валидация)
-        if (!session.user?.email) {
-          logSecurityEvent('PASSWORD_RESET_NO_EMAIL')
-          alert('⚠️ Недостаточно данных для сброса пароля')
-          router.push('/login')
-          return
-        }
-        
-        // Дополнительная проверка: есть ли в URL параметры recovery
-        const urlParams = new URLSearchParams(window.location.search)
-        const type = urlParams.get('type')
-        const accessToken = urlParams.get('access_token')
-        const refreshToken = urlParams.get('refresh_token')
-        
-        // Если есть токены в URL, это точно recovery сессия
-        if (accessToken || refreshToken) {
-          logSecurityEvent('PASSWORD_RESET_VALID_SESSION', { 
-            userEmail: session.user.email,
-            hasAccessToken: !!accessToken,
-            hasRefreshToken: !!refreshToken,
-            type: type
-          })
-          setIsValidSession(true)
-          return
-        }
-        
-        // Если нет токенов в URL, но есть сессия - тоже разрешаем
-        // (на случай, если пользователь уже прошел через auth callback)
-        if (session.user) {
+        // Если есть сессия с пользователем, разрешаем
+        if (session.user?.email) {
           logSecurityEvent('PASSWORD_RESET_SESSION_FOUND', { 
             userEmail: session.user.email,
             type: type
           })
           setIsValidSession(true)
-          return
+        } else {
+          logSecurityEvent('PASSWORD_RESET_NO_EMAIL')
+          alert('⚠️ Недостаточно данных для сброса пароля')
+          router.push('/login')
         }
-        
-        // Если ничего не подошло
-        logSecurityEvent('PASSWORD_RESET_INVALID_SESSION', { 
-          userEmail: session.user?.email,
-          type: type
-        })
-        alert('⚠️ Недостаточно прав для сброса пароля')
-        router.push('/login')
         
       } catch (error) {
         console.error('Session check error:', error)
