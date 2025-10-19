@@ -11,6 +11,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [isValidSession, setIsValidSession] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
+  const [userEmail, setUserEmail] = useState(null)
 
   // Проверяем валидность сессии для сброса пароля
   useEffect(() => {
@@ -24,65 +25,56 @@ export default function ResetPasswordPage() {
         
         console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type })
         
-        // Если есть access_token, пытаемся создать сессию
+        // Если есть access_token, разрешаем сброс пароля
         if (accessToken) {
-          try {
-            console.log('Creating session from tokens...')
-            
-            // Если есть оба токена, используем setSession
-            if (accessToken && refreshToken) {
+          console.log('Access token found, allowing password reset...')
+          
+          logSecurityEvent('PASSWORD_RESET_ACCESS_TOKEN_FOUND', { 
+            hasAccessToken: true,
+            hasRefreshToken: !!refreshToken,
+            type: type
+          })
+          
+          // Если есть оба токена, пытаемся создать сессию
+          if (accessToken && refreshToken) {
+            try {
+              console.log('Both tokens available, attempting session creation...')
               const { data, error } = await supabase.auth.setSession({
                 access_token: accessToken,
                 refresh_token: refreshToken
               })
               
-              console.log('Session creation result:', { session: !!data.session, error: error?.message })
-              
-              if (error) {
-                console.error('Token session error:', error)
-                logSecurityEvent('PASSWORD_RESET_TOKEN_ERROR', { error: error.message })
-                alert('⚠️ Ссылка для сброса пароля недействительна или истекла')
-                router.push('/forgot-password')
-                return
-              }
-              
               if (data.session) {
-                logSecurityEvent('PASSWORD_RESET_TOKEN_SESSION_CREATED', { 
-                  userEmail: data.session.user.email,
-                  type: type
+                console.log('Session created successfully')
+                setUserEmail(data.session.user.email)
+                logSecurityEvent('PASSWORD_RESET_SESSION_CREATED', { 
+                  userEmail: data.session.user.email
                 })
-                setIsValidSession(true)
-                setCheckingSession(false)
-                return
+              } else {
+                console.log('Session creation failed, but allowing reset with access token')
+                logSecurityEvent('PASSWORD_RESET_SESSION_FAILED_BUT_ALLOWING', { 
+                  error: error?.message
+                })
               }
-            }
-            
-            // Если только access_token, используем другой подход
-            if (accessToken && !refreshToken) {
-              console.log('Only access_token available, using alternative approach...')
-              
-              // Попробуем использовать exchangeCodeForSession или просто разрешим сброс
-              // Для сброса пароля достаточно access_token
-              logSecurityEvent('PASSWORD_RESET_ACCESS_TOKEN_ONLY', { 
-                hasAccessToken: true,
-                hasRefreshToken: false,
-                type: type
+            } catch (sessionError) {
+              console.log('Session creation error, but allowing reset:', sessionError)
+              logSecurityEvent('PASSWORD_RESET_SESSION_ERROR_BUT_ALLOWING', { 
+                error: sessionError.message
               })
-              
-              // Разрешаем сброс пароля с предупреждением
-              alert('⚠️ Внимание: Ссылка может быть недействительной. Если сброс пароля не работает, запросите новую ссылку.')
-              setIsValidSession(true)
-              setCheckingSession(false)
-              return
             }
-            
-          } catch (tokenError) {
-            console.error('Token processing error:', tokenError)
-            logSecurityEvent('PASSWORD_RESET_TOKEN_PROCESSING_ERROR', { error: tokenError.message })
-            alert('⚠️ Ошибка обработки токенов')
-            router.push('/forgot-password')
-            return
+          } else {
+            console.log('Only access token available, allowing reset without session')
+            logSecurityEvent('PASSWORD_RESET_ACCESS_TOKEN_ONLY', { 
+              hasAccessToken: true,
+              hasRefreshToken: false,
+              type: type
+            })
           }
+          
+          // В любом случае разрешаем сброс пароля, если есть access_token
+          setIsValidSession(true)
+          setCheckingSession(false)
+          return
         }
         
         // Если нет токенов в URL, проверяем существующую сессию
@@ -107,6 +99,7 @@ export default function ResetPasswordPage() {
         
         // Если есть сессия с пользователем, разрешаем
         if (session.user?.email) {
+          setUserEmail(session.user.email)
           logSecurityEvent('PASSWORD_RESET_SESSION_FOUND', { 
             userEmail: session.user.email,
             type: type
@@ -143,26 +136,33 @@ export default function ResetPasswordPage() {
     }
 
     setLoading(true)
-    const { data, error } = await supabase.auth.updateUser({ password })
     
-    if (error) {
-      setLoading(false)
-      logSecurityEvent('PASSWORD_RESET_UPDATE_ERROR', { error: error.message })
-      alert(error.message)
-      return
-    }
+    try {
+      const { data, error } = await supabase.auth.updateUser({ password })
+      
+      if (error) {
+        setLoading(false)
+        logSecurityEvent('PASSWORD_RESET_UPDATE_ERROR', { error: error.message })
+        alert(`Ошибка обновления пароля: ${error.message}`)
+        return
+      }
 
-    // ВАЖНО: Принудительно выходим из сессии после сброса пароля
-    await supabase.auth.signOut()
-    setLoading(false)
-    
-    // Логируем успешный сброс пароля
-    logSecurityEvent('PASSWORD_RESET_SUCCESS', {
-      userEmail: data.user?.email
-    })
-    
-    alert('Пароль успешно обновлён! Войдите с новым паролем.')
-    router.push('/login')
+      // ВАЖНО: Принудительно выходим из сессии после сброса пароля
+      await supabase.auth.signOut()
+      setLoading(false)
+      
+      // Логируем успешный сброс пароля
+      logSecurityEvent('PASSWORD_RESET_SUCCESS', {
+        userEmail: data.user?.email || userEmail
+      })
+      
+      alert('Пароль успешно обновлён! Войдите с новым паролем.')
+      router.push('/login')
+    } catch (updateError) {
+      setLoading(false)
+      logSecurityEvent('PASSWORD_RESET_UPDATE_EXCEPTION', { error: updateError.message })
+      alert(`Ошибка при обновлении пароля: ${updateError.message}`)
+    }
   }
 
   // Показываем загрузку при проверке сессии
