@@ -12,6 +12,8 @@ export default function ResetPasswordPage() {
   const [isValidSession, setIsValidSession] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
   const [userEmail, setUserEmail] = useState(null)
+  const [accessToken, setAccessToken] = useState(null)
+  const [refreshToken, setRefreshToken] = useState(null)
 
   // Проверяем валидность сессии для сброса пароля
   useEffect(() => {
@@ -24,6 +26,10 @@ export default function ResetPasswordPage() {
         const type = urlParams.get('type')
         
         console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type })
+        
+        // Сохраняем токены для использования в handleSubmit
+        setAccessToken(accessToken)
+        setRefreshToken(refreshToken)
         
         // Если есть access_token, разрешаем сброс пароля
         if (accessToken) {
@@ -138,6 +144,43 @@ export default function ResetPasswordPage() {
     setLoading(true)
     
     try {
+      // Если у нас есть токены, но нет активной сессии, создаем сессию
+      if (accessToken && !userEmail) {
+        console.log('Creating session from tokens before password update...')
+        
+        try {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || ''
+          })
+          
+          if (error) {
+            console.error('Failed to create session for password update:', error)
+            logSecurityEvent('PASSWORD_RESET_SESSION_CREATION_FAILED', { error: error.message })
+            alert('⚠️ Не удалось создать сессию для сброса пароля. Попробуйте запросить новую ссылку.')
+            setLoading(false)
+            return
+          }
+          
+          if (data.session) {
+            console.log('Session created successfully for password update')
+            setUserEmail(data.session.user.email)
+            logSecurityEvent('PASSWORD_RESET_SESSION_CREATED_FOR_UPDATE', { 
+              userEmail: data.session.user.email
+            })
+          }
+        } catch (sessionError) {
+          console.error('Session creation error during password update:', sessionError)
+          logSecurityEvent('PASSWORD_RESET_SESSION_ERROR_DURING_UPDATE', { 
+            error: sessionError.message
+          })
+          alert('⚠️ Ошибка создания сессии. Попробуйте запросить новую ссылку.')
+          setLoading(false)
+          return
+        }
+      }
+      
+      // Теперь обновляем пароль
       const { data, error } = await supabase.auth.updateUser({ password })
       
       if (error) {
