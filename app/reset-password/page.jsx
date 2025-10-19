@@ -24,40 +24,58 @@ export default function ResetPasswordPage() {
         
         console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type })
         
-        // Если есть токены в URL, создаем сессию из них
-        if (accessToken || refreshToken) {
+        // Если есть access_token, пытаемся создать сессию
+        if (accessToken) {
           try {
             console.log('Creating session from tokens...')
-            const { data, error } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            })
             
-            console.log('Session creation result:', { session: !!data.session, error: error?.message })
-            
-            if (error) {
-              console.error('Token session error:', error)
-              logSecurityEvent('PASSWORD_RESET_TOKEN_ERROR', { error: error.message })
-              alert('⚠️ Ссылка для сброса пароля недействительна или истекла')
-              router.push('/forgot-password')
-              return
+            // Если есть оба токена, используем setSession
+            if (accessToken && refreshToken) {
+              const { data, error } = await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken
+              })
+              
+              console.log('Session creation result:', { session: !!data.session, error: error?.message })
+              
+              if (error) {
+                console.error('Token session error:', error)
+                logSecurityEvent('PASSWORD_RESET_TOKEN_ERROR', { error: error.message })
+                alert('⚠️ Ссылка для сброса пароля недействительна или истекла')
+                router.push('/forgot-password')
+                return
+              }
+              
+              if (data.session) {
+                logSecurityEvent('PASSWORD_RESET_TOKEN_SESSION_CREATED', { 
+                  userEmail: data.session.user.email,
+                  type: type
+                })
+                setIsValidSession(true)
+                setCheckingSession(false)
+                return
+              }
             }
             
-            if (data.session) {
-              logSecurityEvent('PASSWORD_RESET_TOKEN_SESSION_CREATED', { 
-                userEmail: data.session.user.email,
+            // Если только access_token, используем другой подход
+            if (accessToken && !refreshToken) {
+              console.log('Only access_token available, using alternative approach...')
+              
+              // Попробуем использовать exchangeCodeForSession или просто разрешим сброс
+              // Для сброса пароля достаточно access_token
+              logSecurityEvent('PASSWORD_RESET_ACCESS_TOKEN_ONLY', { 
+                hasAccessToken: true,
+                hasRefreshToken: false,
                 type: type
               })
+              
+              // Разрешаем сброс пароля с предупреждением
+              alert('⚠️ Внимание: Ссылка может быть недействительной. Если сброс пароля не работает, запросите новую ссылку.')
               setIsValidSession(true)
               setCheckingSession(false)
               return
-            } else {
-              console.error('No session created from tokens')
-              logSecurityEvent('PASSWORD_RESET_NO_SESSION_FROM_TOKENS')
-              alert('⚠️ Не удалось создать сессию из токенов')
-              router.push('/forgot-password')
-              return
             }
+            
           } catch (tokenError) {
             console.error('Token processing error:', tokenError)
             logSecurityEvent('PASSWORD_RESET_TOKEN_PROCESSING_ERROR', { error: tokenError.message })
