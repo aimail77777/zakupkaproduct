@@ -32,7 +32,7 @@ https://lvlmart.kz/auth/callback?type=recovery
 <h2>Сброс пароля</h2>
 <p>Вы запросили сброс пароля для вашего аккаунта в lvlmart.</p>
 <p>Нажмите на ссылку ниже, чтобы сбросить пароль:</p>
-<p><a href="{{ .SiteURL }}/reset-password?access_token={{ .TokenHash }}&refresh_token={{ .RefreshToken }}&type=recovery">Сбросить пароль</a></p>
+<p><a href="{{ .ConfirmationURL }}">Сбросить пароль</a></p>
 <p>Если вы не запрашивали сброс пароля, проигнорируйте это письмо.</p>
 <p>Ссылка действительна в течение 24 часов.</p>
 ```

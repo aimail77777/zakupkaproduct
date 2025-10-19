@@ -12,8 +12,6 @@ export default function ResetPasswordPage() {
   const [isValidSession, setIsValidSession] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
   const [userEmail, setUserEmail] = useState(null)
-  const [accessToken, setAccessToken] = useState(null)
-  const [refreshToken, setRefreshToken] = useState(null)
 
   // Проверяем валидность сессии для сброса пароля
   useEffect(() => {
@@ -27,57 +25,18 @@ export default function ResetPasswordPage() {
         
         console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type })
         
-        // Сохраняем токены для использования в handleSubmit
-        setAccessToken(accessToken)
-        setRefreshToken(refreshToken)
         
         // Если есть access_token, разрешаем сброс пароля
         if (accessToken) {
-          console.log('Access token found, allowing password reset...')
+          console.log('Password reset link detected, allowing password reset...')
           
-          logSecurityEvent('PASSWORD_RESET_ACCESS_TOKEN_FOUND', { 
+          logSecurityEvent('PASSWORD_RESET_LINK_DETECTED', { 
             hasAccessToken: true,
             hasRefreshToken: !!refreshToken,
             type: type
           })
           
-          // Если есть оба токена, пытаемся создать сессию
-          if (accessToken && refreshToken) {
-            try {
-              console.log('Both tokens available, attempting session creation...')
-              const { data, error } = await supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken
-              })
-              
-              if (data.session) {
-                console.log('Session created successfully')
-                setUserEmail(data.session.user.email)
-                logSecurityEvent('PASSWORD_RESET_SESSION_CREATED', { 
-                  userEmail: data.session.user.email
-                })
-              } else {
-                console.log('Session creation failed, but allowing reset with access token')
-                logSecurityEvent('PASSWORD_RESET_SESSION_FAILED_BUT_ALLOWING', { 
-                  error: error?.message
-                })
-              }
-            } catch (sessionError) {
-              console.log('Session creation error, but allowing reset:', sessionError)
-              logSecurityEvent('PASSWORD_RESET_SESSION_ERROR_BUT_ALLOWING', { 
-                error: sessionError.message
-              })
-            }
-          } else {
-            console.log('Only access token available, allowing reset without session')
-            logSecurityEvent('PASSWORD_RESET_ACCESS_TOKEN_ONLY', { 
-              hasAccessToken: true,
-              hasRefreshToken: false,
-              type: type
-            })
-          }
-          
-          // В любом случае разрешаем сброс пароля, если есть access_token
+          // Разрешаем сброс пароля - Supabase сам обработает токены
           setIsValidSession(true)
           setCheckingSession(false)
           return
@@ -144,46 +103,7 @@ export default function ResetPasswordPage() {
     setLoading(true)
     
     try {
-      // Если у нас есть токены, но нет активной сессии, пробуем создать сессию
-      if (accessToken && !userEmail) {
-        console.log('Attempting to create session from tokens before password update...')
-        
-        // Пробуем создать сессию только если есть оба токена
-        if (accessToken && refreshToken) {
-          try {
-            const { data, error } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            })
-            
-            if (data.session) {
-              console.log('Session created successfully for password update')
-              setUserEmail(data.session.user.email)
-              logSecurityEvent('PASSWORD_RESET_SESSION_CREATED_FOR_UPDATE', { 
-                userEmail: data.session.user.email
-              })
-            } else {
-              console.log('Session creation failed, trying alternative approach')
-              logSecurityEvent('PASSWORD_RESET_SESSION_FAILED_TRYING_ALTERNATIVE', { 
-                error: error?.message
-              })
-            }
-          } catch (sessionError) {
-            console.log('Session creation error, trying alternative approach:', sessionError)
-            logSecurityEvent('PASSWORD_RESET_SESSION_ERROR_TRYING_ALTERNATIVE', { 
-              error: sessionError.message
-            })
-          }
-        } else {
-          console.log('Incomplete tokens, trying alternative approach')
-          logSecurityEvent('PASSWORD_RESET_INCOMPLETE_TOKENS_TRYING_ALTERNATIVE', { 
-            hasAccessToken: !!accessToken,
-            hasRefreshToken: !!refreshToken
-          })
-        }
-      }
-      
-      // Пробуем обновить пароль
+      // Пробуем обновить пароль - Supabase сам обработает токены из URL
       console.log('Attempting password update...')
       const { data, error } = await supabase.auth.updateUser({ password })
       
@@ -207,7 +127,7 @@ export default function ResetPasswordPage() {
       
       // Логируем успешный сброс пароля
       logSecurityEvent('PASSWORD_RESET_SUCCESS', {
-        userEmail: data.user?.email || userEmail
+        userEmail: data.user?.email
       })
       
       alert('Пароль успешно обновлён! Войдите с новым паролем.')
