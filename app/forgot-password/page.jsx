@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { getResetPasswordUrl } from '@/utils/url'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -16,11 +15,9 @@ export default function ForgotPasswordPage() {
     }
     setLoading(true)
     
-    // Получаем динамический URL для сброса пароля
-    const resetUrl = getResetPasswordUrl()
-    
+    // Используем прямой URL для сброса пароля с токенами
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: resetUrl, // страница смены пароля
+      redirectTo: 'https://lvlmart.kz/reset-password',
     })
     setLoading(false)
 

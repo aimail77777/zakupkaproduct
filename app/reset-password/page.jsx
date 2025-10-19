@@ -16,7 +16,7 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        // Сначала проверяем, есть ли токены в URL
+        // Проверяем, есть ли токены в URL
         const urlParams = new URLSearchParams(window.location.search)
         const accessToken = urlParams.get('access_token')
         const refreshToken = urlParams.get('refresh_token')
@@ -24,19 +24,41 @@ export default function ResetPasswordPage() {
         
         console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type })
         
-        // Если есть токены в URL, это точно recovery сессия
-        if (accessToken || refreshToken) {
-          logSecurityEvent('PASSWORD_RESET_URL_TOKENS_FOUND', { 
-            hasAccessToken: !!accessToken,
-            hasRefreshToken: !!refreshToken,
-            type: type
-          })
-          setIsValidSession(true)
-          setCheckingSession(false)
-          return
+        // Если есть токены в URL, создаем сессию из них
+        if (accessToken && refreshToken) {
+          try {
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            })
+            
+            if (error) {
+              console.error('Token session error:', error)
+              logSecurityEvent('PASSWORD_RESET_TOKEN_ERROR', { error: error.message })
+              alert('⚠️ Ссылка для сброса пароля недействительна или истекла')
+              router.push('/forgot-password')
+              return
+            }
+            
+            if (data.session) {
+              logSecurityEvent('PASSWORD_RESET_TOKEN_SESSION_CREATED', { 
+                userEmail: data.session.user.email,
+                type: type
+              })
+              setIsValidSession(true)
+              setCheckingSession(false)
+              return
+            }
+          } catch (tokenError) {
+            console.error('Token processing error:', tokenError)
+            logSecurityEvent('PASSWORD_RESET_TOKEN_PROCESSING_ERROR', { error: tokenError.message })
+            alert('⚠️ Ошибка обработки токенов')
+            router.push('/forgot-password')
+            return
+          }
         }
         
-        // Если нет токенов в URL, проверяем сессию
+        // Если нет токенов в URL, проверяем существующую сессию
         const { data: { session }, error } = await supabase.auth.getSession()
         
         console.log('Session check:', { session: !!session, error: error?.message })
