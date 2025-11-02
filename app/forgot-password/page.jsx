@@ -14,10 +14,9 @@ export default function ForgotPasswordPage() {
       return
     }
     setLoading(true)
-    
-    // Используем прямой URL для сброса пароля с токенами
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://lvlmart.kz/reset-password',
+      redirectTo: `${baseUrl}/reset-password`,
     })
     setLoading(false)
 

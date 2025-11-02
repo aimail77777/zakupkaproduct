@@ -7,7 +7,7 @@
 NEXT_PUBLIC_SUPABASE_URL=https://fhiansdewwuvdkbqrqlc.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoaWFuc2Rld3d1dmRrYnFycWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4NTUzMjMsImV4cCI6MjA2OTQzMTMyM30.BV9jRbyx79_qm3yKOYxhxU_zuGc_0ZeUmApcL6W_hpA
 NEXT_PUBLIC_ADMIN_EMAIL=hekgen01@gmail.com
-NEXT_PUBLIC_SITE_URL=http://localhost:3001
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 ### **Для продакшна (.env.production):**
