@@ -1,14 +1,13 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
-// Force dynamic rendering (uses searchParams)
+// Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
 function ResetPasswordInner() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,29 +17,8 @@ function ResetPasswordInner() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        // auth/callback passes tokens as query params after stripping hash
-        const accessToken = searchParams.get('access_token')
-        const refreshToken = searchParams.get('refresh_token')
-        const type = searchParams.get('type')
-
-        if (accessToken && refreshToken && type === 'recovery') {
-          // Re-establish session so updateUser() works
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          })
-          if (error) {
-            console.error('setSession error:', error)
-            alert('⚠️ Ссылка для сброса пароля недействительна или истекла')
-            router.push('/forgot-password')
-            return
-          }
-          setIsValidSession(true)
-          setCheckingSession(false)
-          return
-        }
-
-        // Fallback: check if there's already an active session
+        // auth/callback sets the session via setSession() before redirecting here.
+        // We just verify it's active.
         const { data: { session }, error } = await supabase.auth.getSession()
         if (error || !session) {
           alert('⚠️ Ссылка для сброса пароля недействительна или истекла')
@@ -58,7 +36,7 @@ function ResetPasswordInner() {
     }
 
     checkSession()
-  }, [router, searchParams])
+  }, [router])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

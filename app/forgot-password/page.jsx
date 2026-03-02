@@ -1,27 +1,30 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getSiteUrl } from '@/utils/url'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!email) {
-      alert('Введите e-mail')
+      setErrorMsg('Введите e-mail')
       return
     }
     setLoading(true)
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+    setErrorMsg('')
+    const baseUrl = getSiteUrl()
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${baseUrl}/reset-password`,
+      redirectTo: `${baseUrl}/auth/callback`,
     })
     setLoading(false)
 
     if (error) {
-      alert(error.message)
+      setErrorMsg(error.message)
       return
     }
     setSent(true)
@@ -41,13 +44,16 @@ export default function ForgotPasswordPage() {
               className="input"
               required
             />
+            {errorMsg && (
+              <p className="text-sm text-red-600">{errorMsg}</p>
+            )}
             <button type="submit" disabled={loading} className="btn btn-primary w-full">
               {loading ? 'Отправляем...' : 'Отправить ссылку для сброса'}
             </button>
           </form>
         ) : (
           <p className="text-center text-green-600">
-            Ссылка для сброса пароля отправлена на {email}. Проверьте почту.
+            Ссылка для сброса пароля отправлена на {email}. Проверьте почту и папку «Спам».
           </p>
         )}
       </div>

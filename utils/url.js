@@ -5,13 +5,15 @@
  * @returns {string} Базовый URL сайта
  */
 export const getSiteUrl = () => {
-  // В браузере используем window.location.origin
+  // Always prefer the explicit env var (production domain)
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL
+  }
+  // Fallback: in browser use current origin (dev environment)
   if (typeof window !== 'undefined') {
     return window.location.origin
   }
-  
-  // На сервере используем переменную окружения
-  return process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  return 'http://localhost:3000'
 }
 
 /**

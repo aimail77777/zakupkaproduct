@@ -36,12 +36,9 @@ export default function AuthCallback() {
           }
 
           if (type === 'recovery') {
-            // Password reset — sign out so user isn't auto-logged-in,
-            // then redirect to reset-password WITH tokens in query for that page to use
-            await supabase.auth.signOut()
-            router.push(
-              `/reset-password?access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}&type=recovery`
-            )
+            // Password reset — session is already active via setSession() above,
+            // just redirect to reset-password page (it will use getSession())
+            router.push('/reset-password')
             return
           }
 
