@@ -1,11 +1,16 @@
 'use client'
-import { useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function LoginPage() {
+export const dynamic = 'force-dynamic'
+
+function LoginInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectParams = searchParams.get('redirect') || '/'
+
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: '', password: '' })
 
@@ -14,23 +19,23 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     // Валидация полей
     if (!form.email.trim()) {
       alert('⚠️ Пожалуйста, введите email адрес')
       return
     }
-    
+
     if (!form.password.trim()) {
       alert('⚠️ Пожалуйста, введите пароль')
       return
     }
-    
+
     if (form.password.length < 6) {
       alert('⚠️ Пароль должен содержать минимум 6 символов')
       return
     }
-    
+
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({
       email: form.email,
@@ -41,7 +46,7 @@ export default function LoginPage() {
     if (error) {
       // Переводим ошибки на русский
       let errorMessage = 'Произошла ошибка при входе'
-      
+
       if (error.message.includes('Invalid login credentials')) {
         errorMessage = '❌ Неверный email или пароль'
       } else if (error.message.includes('Email not confirmed')) {
@@ -53,14 +58,14 @@ export default function LoginPage() {
       } else {
         errorMessage = `❌ ${error.message}`
       }
-      
+
       alert(errorMessage)
       return
     }
-    
+
     // Перенаправляем на главную страницу после успешного входа
     alert('✅ Успешный вход! Добро пожаловать!')
-    router.push('/')
+    router.push(redirectParams)
   }
 
   return (
@@ -143,12 +148,20 @@ export default function LoginPage() {
             <Link href="/forgot-password" className="text-blue-600 hover:underline">
               Забыли пароль?
             </Link>
-            <Link href="/register" className="text-blue-600 hover:underline">
+            <Link href={`/register${redirectParams !== '/' ? '?redirect=' + redirectParams : ''}`} className="text-blue-600 hover:underline">
               Нет аккаунта? Зарегистрироваться
             </Link>
           </div>
         </form>
       </div>
     </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Загрузка...</div>}>
+      <LoginInner />
+    </Suspense>
   )
 }

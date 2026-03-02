@@ -21,6 +21,7 @@ function BuyInner() {
   const [loading, setLoading] = useState(true)
 
   // Данные покупателя
+  const [user, setUser] = useState(null)
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
@@ -41,6 +42,29 @@ function BuyInner() {
     script.onload = () => setIsWidgetLoaded(true)
     script.onerror = () => console.error('Не удалось загрузить TipTopPay виджет')
     document.head.appendChild(script)
+  }, [])
+
+  // Авторизация и загрузка профиля
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUser(user)
+        if (user.email) setCustomerEmail(user.email)
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, phone')
+          .eq('id', user.id)
+          .single()
+
+        if (profile) {
+          if (profile.name) setCustomerName(profile.name)
+          if (profile.phone) setCustomerPhone(profile.phone)
+        }
+      }
+    }
+    fetchUser()
   }, [])
 
   // Загружаем данные о товарах из базы данных
@@ -137,6 +161,25 @@ function BuyInner() {
       .then((widgetResult) => {
         console.log('TipTopPay result:', widgetResult)
         if (widgetResult && (widgetResult.success || widgetResult.status === 'Completed')) {
+
+          // Сохраняем заказ в БД
+          const records = cart.map(item => {
+            const product = products[item.id]
+            const price = product ? Number(product.price || 0) : 0
+            return {
+              user_id: user?.id || null,
+              product_id: item.id,
+              qty: item.qty || 1,
+              amount: price * (item.qty || 1)
+            }
+          })
+
+          supabase.from('purchases').insert(records).then(({ error }) => {
+            if (error) {
+              console.error('Ошибка при сохранении покупок:', error)
+            }
+          })
+
           clearCart()
           setCart([])
           setPaymentStatus('success')
@@ -366,7 +409,18 @@ function BuyInner() {
 
           {/* Форма данных покупателя */}
           <div className="card p-4 sm:p-6">
-            <h2 className="text-base sm:text-lg font-semibold mb-4">Данные для оформления</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+              <h2 className="text-base sm:text-lg font-semibold">Данные для оформления</h2>
+              {!user && (
+                <Link href="/login?redirect=/buy" className="text-sm text-blue-600 hover:underline flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                  Войти для автозаполнения
+                </Link>
+              )}
+            </div>
+
             <div className="grid gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

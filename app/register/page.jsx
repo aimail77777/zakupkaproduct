@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic'
 function RegisterInner() {
   const router = useRouter()
   const search = useSearchParams()
+  const redirectParams = search.get('redirect') || '/'
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', email: '', password: '' })
   const [refCodeFromUrl, setRefCodeFromUrl] = useState(null)
@@ -83,7 +84,7 @@ function RegisterInner() {
           phone: form.phone,
           ref_code: refCodeFromUrl,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback${redirectParams !== '/' ? '?redirect=' + redirectParams : ''}`,
       },
     })
     setLoading(false)
@@ -122,10 +123,10 @@ function RegisterInner() {
     const { data: { user } } = await supabase.auth.getUser()
     if (user && !user.email_confirmed_at) {
       alert('📧 Проверьте email для подтверждения аккаунта. Письмо может прийти в папку "Спам"')
-      router.push('/login')
+      router.push(redirectParams === '/' ? '/login' : `/login?redirect=${redirectParams}`)
     } else {
       alert('🎉 Регистрация успешна! Добро пожаловать!')
-      router.push('/')
+      router.push(redirectParams)
     }
   }
 
@@ -282,7 +283,7 @@ function RegisterInner() {
             <div className="text-center">
               <p className="text-xs sm:text-sm text-gray-600">
                 Уже есть аккаунт?{' '}
-                <Link href="/login" className="text-blue-600 hover:underline font-medium">
+                <Link href={`/login${redirectParams !== '/' ? '?redirect=' + redirectParams : ''}`} className="text-blue-600 hover:underline font-medium">
                   Войти
                 </Link>
               </p>
