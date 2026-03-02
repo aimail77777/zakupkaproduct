@@ -33,9 +33,8 @@ export default function OfferPage() {
               <div>
                 <p className="font-semibold mb-2">Продавец:</p>
                 <ul className="list-none ml-4 space-y-1">
-                  <li>Индивидуальный предприниматель</li>
-                  <li>ИИН: 951119301025</li>
-                  <li>Адрес: Республика Казахстан, г. Алматы, район Алатауский, мкр. Саялы, дом №106</li>
+                  <li>Товарищество с ограниченной ответственностью «Buynel»</li>
+                  <li>БИН: 210840022706</li>
                   <li>
                     Электронная почта:{' '}
                     <a href="mailto:buynel@support.kz" className="text-blue-600 hover:underline">buynel@support.kz</a>
@@ -201,13 +200,16 @@ export default function OfferPage() {
           </section>
 
           <section className="mt-12 pt-8 border-t border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">📩 Контактные данные:</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">📩 Реквизиты продавца:</h2>
             
             <div className="space-y-2 text-gray-700">
-              <p><strong>ИП, ИИН 951119301025</strong></p>
-              <p>
-                <strong>Адрес:</strong> Республика Казахстан, г. Алматы, район Алатауский, мкр. Саялы, дом №106
-              </p>
+              <p><strong>Товарищество с ограниченной ответственностью «Buynel»</strong></p>
+              <p><strong>БИН/ИИН:</strong> 210840022706</p>
+              <p><strong>Номер счёта:</strong> KZ26 8562 2031 2166 2145</p>
+              <p><strong>Валюта:</strong> KZT</p>
+              <p><strong>Банк:</strong> АО «Банк ЦентрКредит»</p>
+              <p><strong>БИК:</strong> KCJBKZKX</p>
+              <p><strong>КБе:</strong> 17</p>
               <p>
                 <strong>Email:</strong>{' '}
                 <a href="mailto:buynel@support.kz" className="text-blue-600 hover:underline">buynel@support.kz</a>

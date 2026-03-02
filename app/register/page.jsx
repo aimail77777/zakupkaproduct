@@ -23,7 +23,7 @@ function RegisterInner() {
   const handleChange = (e) => {
     const { name, value } = e.target
     setForm({ ...form, [name]: value })
-    
+
     // Очищаем ошибку при изменении поля
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' })
@@ -38,25 +38,25 @@ function RegisterInner() {
   // Валидация формы
   const validateForm = () => {
     const newErrors = {}
-    
+
     if (!form.name.trim()) {
       newErrors.name = '👤 Имя обязательно для заполнения'
     } else if (form.name.trim().length < 2) {
       newErrors.name = '👤 Имя должно содержать минимум 2 символа'
     }
-    
+
     if (!form.phone.trim()) {
       newErrors.phone = '📱 Телефон обязателен для связи'
     } else if (form.phone.trim().length < 10) {
       newErrors.phone = '📱 Введите корректный номер телефона'
     }
-    
+
     if (!form.email.trim()) {
       newErrors.email = '📧 Email обязателен для регистрации'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       newErrors.email = '📧 Введите корректный email адрес'
     }
-    
+
     if (!isValidPassword(form.password)) {
       newErrors.password = '🔒 Пароль должен содержать минимум 6 символов'
     }
@@ -67,12 +67,12 @@ function RegisterInner() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     // Валидация формы
     if (!validateForm()) {
       return
     }
-    
+
     setLoading(true)
     const { error } = await supabase.auth.signUp({
       email: form.email,
@@ -90,28 +90,34 @@ function RegisterInner() {
 
     if (error) {
       console.error('Registration error:', error)
-      
+
       // Переводим ошибки на русский
       let errorMessage = 'Произошла ошибка при регистрации'
-      
-      if (error.message.includes('User already registered')) {
+
+      if (
+        error.message.includes('User already registered') ||
+        error.message.includes('already registered') ||
+        error.message.includes('duplicate key') ||
+        error.message.includes('Database error') ||
+        error.status === 500
+      ) {
         errorMessage = '👤 Пользователь с таким email уже зарегистрирован'
       } else if (error.message.includes('Password should be at least')) {
         errorMessage = '🔒 Пароль должен содержать минимум 6 символов'
-      } else if (error.message.includes('Invalid email')) {
+      } else if (error.message.includes('Invalid email') || error.message.includes('email_address_invalid')) {
         errorMessage = '📧 Некорректный email адрес'
       } else if (error.message.includes('Signup is disabled')) {
         errorMessage = '🚫 Регистрация временно отключена'
-      } else if (error.message.includes('Email rate limit exceeded')) {
+      } else if (error.message.includes('rate limit') || error.message.includes('too many')) {
         errorMessage = '⏰ Слишком много попыток. Попробуйте позже'
       } else {
         errorMessage = `❌ ${error.message}`
       }
-      
+
       alert(errorMessage)
       return
     }
-    
+
     // Проверяем, нужно ли подтверждение email
     const { data: { user } } = await supabase.auth.getUser()
     if (user && !user.email_confirmed_at) {
@@ -149,13 +155,13 @@ function RegisterInner() {
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 Ваше имя
               </label>
-              <input 
+              <input
                 className={`input text-sm sm:text-base ${errors.name ? 'border-red-500' : ''}`}
-                placeholder="Иван Иванов" 
-                name="name" 
-                value={form.name} 
-                onChange={handleChange} 
-                required 
+                placeholder="Иван Иванов"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                required
               />
               <div className="text-xs text-gray-500 mt-1">
                 Как к вам обращаться
@@ -174,13 +180,13 @@ function RegisterInner() {
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 Телефон
               </label>
-              <input 
+              <input
                 className={`input text-sm sm:text-base ${errors.phone ? 'border-red-500' : ''}`}
-                placeholder="+7 (999) 123-45-67" 
-                name="phone" 
-                value={form.phone} 
-                onChange={handleChange} 
-                required 
+                placeholder="+7 (999) 123-45-67"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                required
               />
               <div className="text-xs text-gray-500 mt-1">
                 Для связи по заказам
@@ -199,14 +205,14 @@ function RegisterInner() {
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 Email адрес
               </label>
-              <input 
+              <input
                 className={`input text-sm sm:text-base ${errors.email ? 'border-red-500' : ''}`}
-                placeholder="your@email.com" 
-                type="email" 
-                name="email" 
-                value={form.email} 
-                onChange={handleChange} 
-                required 
+                placeholder="your@email.com"
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                required
               />
               <div className="text-xs text-gray-500 mt-1">
                 На этот email придет подтверждение
@@ -225,14 +231,14 @@ function RegisterInner() {
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 Пароль
               </label>
-              <input 
+              <input
                 className={`input text-sm sm:text-base ${errors.password ? 'border-red-500' : ''}`}
-                placeholder="••••••••" 
-                type="password" 
-                name="password" 
-                value={form.password} 
-                onChange={handleChange} 
-                required 
+                placeholder="••••••••"
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                required
               />
               <div className="text-xs text-gray-500 mt-1">
                 Минимум 6 символов
@@ -261,26 +267,26 @@ function RegisterInner() {
               </div>
             )}
 
-                  <button className="btn btn-primary w-full py-2.5 sm:py-3 text-sm sm:text-base" disabled={loading}>
-                    {loading ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span className="hidden sm:inline">Регистрируем...</span>
-                        <span className="sm:hidden">Регистрация...</span>
-                      </div>
-                    ) : (
-                      'Создать аккаунт'
-                    )}
-                  </button>
+            <button className="btn btn-primary w-full py-2.5 sm:py-3 text-sm sm:text-base" disabled={loading}>
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span className="hidden sm:inline">Регистрируем...</span>
+                  <span className="sm:hidden">Регистрация...</span>
+                </div>
+              ) : (
+                'Создать аккаунт'
+              )}
+            </button>
 
-                  <div className="text-center">
-                    <p className="text-xs sm:text-sm text-gray-600">
-                      Уже есть аккаунт?{' '}
-                      <Link href="/login" className="text-blue-600 hover:underline font-medium">
-                        Войти
-                      </Link>
-                    </p>
-                  </div>
+            <div className="text-center">
+              <p className="text-xs sm:text-sm text-gray-600">
+                Уже есть аккаунт?{' '}
+                <Link href="/login" className="text-blue-600 hover:underline font-medium">
+                  Войти
+                </Link>
+              </p>
+            </div>
           </form>
         </div>
       </div>

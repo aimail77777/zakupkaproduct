@@ -1,108 +1,73 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
-import { logSecurityEvent } from '@/utils/security'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function ResetPasswordPage() {
+// Force dynamic rendering (uses searchParams)
+export const dynamic = 'force-dynamic'
+
+function ResetPasswordInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [isValidSession, setIsValidSession] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
-  const [userEmail, setUserEmail] = useState(null)
 
-  // Проверяем валидность сессии для сброса пароля
   useEffect(() => {
     const checkSession = async () => {
       try {
-        // Проверяем, есть ли токены в URL
-        const urlParams = new URLSearchParams(window.location.search)
-        const accessToken = urlParams.get('access_token')
-        const refreshToken = urlParams.get('refresh_token')
-        const type = urlParams.get('type')
-        
-        console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type })
-        
-        
-        // Если есть access_token, разрешаем сброс пароля
-        if (accessToken) {
-          console.log('Password reset link detected, allowing password reset...')
-          
-          logSecurityEvent('PASSWORD_RESET_LINK_DETECTED', { 
-            hasAccessToken: true,
-            hasRefreshToken: !!refreshToken,
-            type: type
+        // auth/callback passes tokens as query params after stripping hash
+        const accessToken = searchParams.get('access_token')
+        const refreshToken = searchParams.get('refresh_token')
+        const type = searchParams.get('type')
+
+        if (accessToken && refreshToken && type === 'recovery') {
+          // Re-establish session so updateUser() works
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
           })
-          
-          // ВАЖНО: Немедленно выходим из любой активной сессии
-          // чтобы предотвратить автоматическую авторизацию
-          try {
-            console.log('Preventing auto-login by signing out immediately...')
-            await supabase.auth.signOut()
-            logSecurityEvent('PASSWORD_RESET_PREVENTED_AUTO_LOGIN')
-          } catch (logoutError) {
-            console.log('Logout error (expected):', logoutError)
+          if (error) {
+            console.error('setSession error:', error)
+            alert('⚠️ Ссылка для сброса пароля недействительна или истекла')
+            router.push('/forgot-password')
+            return
           }
-          
-          // Разрешаем сброс пароля - Supabase сам обработает токены
           setIsValidSession(true)
           setCheckingSession(false)
           return
         }
-        
-        // Если нет токенов в URL, проверяем существующую сессию
+
+        // Fallback: check if there's already an active session
         const { data: { session }, error } = await supabase.auth.getSession()
-        
-        console.log('Session check:', { session: !!session, error: error?.message })
-        
-        if (error) {
-          console.error('Session error:', error)
-          logSecurityEvent('PASSWORD_RESET_SESSION_ERROR', { error: error.message })
+        if (error || !session) {
           alert('⚠️ Ссылка для сброса пароля недействительна или истекла')
           router.push('/forgot-password')
           return
         }
-        
-        if (!session) {
-          logSecurityEvent('PASSWORD_RESET_NO_SESSION')
-          alert('⚠️ Ссылка для сброса пароля недействительна или истекла')
-          router.push('/forgot-password')
-          return
-        }
-        
-        // Если есть сессия с пользователем, разрешаем
-        if (session.user?.email) {
-          setUserEmail(session.user.email)
-          logSecurityEvent('PASSWORD_RESET_SESSION_FOUND', { 
-            userEmail: session.user.email,
-            type: type
-          })
-          setIsValidSession(true)
-        } else {
-          logSecurityEvent('PASSWORD_RESET_NO_EMAIL')
-          alert('⚠️ Недостаточно данных для сброса пароля')
-          router.push('/login')
-        }
-        
-      } catch (error) {
-        console.error('Session check error:', error)
-        logSecurityEvent('PASSWORD_RESET_CHECK_ERROR', { error: error.message })
-        alert('❌ Ошибка проверки сессии')
+        setIsValidSession(true)
+      } catch (err) {
+        console.error('Session check error:', err)
+        alert('❌ Ошибка проверки ссылки')
         router.push('/forgot-password')
       } finally {
         setCheckingSession(false)
       }
     }
-    
+
     checkSession()
-  }, [router])
+  }, [router, searchParams])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!password || !confirm) {
       alert('Введите новый пароль дважды')
+      return
+    }
+    if (password.length < 6) {
+      alert('Пароль должен содержать минимум 6 символов')
       return
     }
     if (password !== confirm) {
@@ -111,59 +76,27 @@ export default function ResetPasswordPage() {
     }
 
     setLoading(true)
-    
     try {
-      // Пробуем обновить пароль - Supabase сам обработает токены из URL
-      console.log('Attempting password update...')
-      const { data, error } = await supabase.auth.updateUser({ password })
-      
+      const { error } = await supabase.auth.updateUser({ password })
       if (error) {
+        console.error('Password update error:', error)
+        alert(`Ошибка обновления пароля: ${error.message}`)
         setLoading(false)
-        console.error('Password update failed:', error)
-        logSecurityEvent('PASSWORD_RESET_UPDATE_ERROR', { error: error.message })
-        
-        // Если ошибка связана с сессией, предлагаем альтернативу
-        if (error.message.includes('session') || error.message.includes('Auth')) {
-          alert('⚠️ Проблема с авторизацией. Попробуйте запросить новую ссылку для сброса пароля.')
-        } else {
-          alert(`Ошибка обновления пароля: ${error.message}`)
-        }
         return
       }
 
-      // ВАЖНО: Принудительно выходим из сессии после сброса пароля
-      console.log('Forcing logout after password reset...')
+      // Sign out so user logs in fresh with new password
       await supabase.auth.signOut()
-      
-      // Дополнительная проверка - убеждаемся, что пользователь разлогинен
-      const { data: sessionCheck } = await supabase.auth.getSession()
-      if (sessionCheck.session) {
-        console.log('Session still exists, forcing another logout...')
-        await supabase.auth.signOut()
-      }
-      
       setLoading(false)
-      
-      // Логируем успешный сброс пароля
-      logSecurityEvent('PASSWORD_RESET_SUCCESS', {
-        userEmail: data.user?.email
-      })
-      
-      alert('Пароль успешно обновлён! Войдите с новым паролем.')
-      
-      // Небольшая задержка перед перенаправлением, чтобы убедиться, что logout завершен
-      setTimeout(() => {
-        router.push('/login')
-      }, 100)
-    } catch (updateError) {
+      alert('✅ Пароль успешно обновлён! Войдите с новым паролем.')
+      router.push('/login')
+    } catch (err) {
       setLoading(false)
-      console.error('Password update exception:', updateError)
-      logSecurityEvent('PASSWORD_RESET_UPDATE_EXCEPTION', { error: updateError.message })
-      alert(`Ошибка при обновлении пароля: ${updateError.message}`)
+      console.error('Password update exception:', err)
+      alert(`Ошибка: ${err.message}`)
     }
   }
 
-  // Показываем загрузку при проверке сессии
   if (checkingSession) {
     return (
       <main className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -175,12 +108,17 @@ export default function ResetPasswordPage() {
     )
   }
 
-  // Если сессия невалидна, не показываем форму
   if (!isValidSession) {
     return (
       <main className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
-          <p className="text-red-600">Ссылка недействительна</p>
+          <p className="text-red-600 mb-4">Ссылка недействительна или истекла</p>
+          <button
+            className="btn btn-primary"
+            onClick={() => router.push('/forgot-password')}
+          >
+            Запросить новую ссылку
+          </button>
         </div>
       </main>
     )
@@ -194,29 +132,48 @@ export default function ResetPasswordPage() {
           Введите новый пароль для вашего аккаунта
         </p>
 
-        <input
-          type="password"
-          placeholder="Новый пароль"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="input"
-          required
-          minLength={6}
-        />
-        <input
-          type="password"
-          placeholder="Повторите пароль"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          className="input"
-          required
-          minLength={6}
-        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Новый пароль</label>
+          <input
+            type="password"
+            placeholder="Минимум 6 символов"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="input"
+            required
+            minLength={6}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Повторите пароль</label>
+          <input
+            type="password"
+            placeholder="Повторите пароль"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            className="input"
+            required
+            minLength={6}
+          />
+        </div>
 
         <button type="submit" disabled={loading} className="btn btn-primary w-full">
           {loading ? 'Обновляем…' : 'Обновить пароль'}
         </button>
       </form>
     </main>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </main>
+    }>
+      <ResetPasswordInner />
+    </Suspense>
   )
 }

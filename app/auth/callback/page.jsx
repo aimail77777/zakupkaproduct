@@ -1,66 +1,74 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function AuthCallback() {
   const router = useRouter()
+  const handled = useRef(false)
 
   useEffect(() => {
+    if (handled.current) return
+    handled.current = true
+
     const handleAuthCallback = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.error('Auth callback error:', error)
-          alert('❌ Ошибка подтверждения email. Попробуйте войти вручную')
+        // Supabase email links deliver tokens in the URL hash (#access_token=...&type=...)
+        const hash = window.location.hash.slice(1) // remove leading '#'
+        const params = new URLSearchParams(hash)
+
+        const accessToken = params.get('access_token')
+        const refreshToken = params.get('refresh_token')
+        const type = params.get('type')
+
+        if (accessToken && refreshToken) {
+          // Establish session from the hash tokens
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+
+          if (error) {
+            console.error('setSession error:', error)
+            alert('❌ Ошибка подтверждения. Попробуйте войти вручную')
+            router.push('/login')
+            return
+          }
+
+          if (type === 'recovery') {
+            // Password reset — sign out so user isn't auto-logged-in,
+            // then redirect to reset-password WITH tokens in query for that page to use
+            await supabase.auth.signOut()
+            router.push(
+              `/reset-password?access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}&type=recovery`
+            )
+            return
+          }
+
+          if (type === 'signup') {
+            alert('✅ Email успешно подтверждён! Добро пожаловать в lvlmart!')
+            router.push('/')
+            return
+          }
+
+          // email_change or other — just go home
+          alert('✅ Авторизация успешна!')
+          router.push('/')
+          return
+        }
+
+        // No hash tokens — check if there's already an active session (e.g. OTP flow)
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error || !session) {
+          alert('⚠️ Ссылка недействительна или истекла. Попробуйте войти вручную')
           router.push('/login')
           return
         }
 
-        if (data.session) {
-          // Проверяем тип события из URL параметров
-          const urlParams = new URLSearchParams(window.location.search)
-          const type = urlParams.get('type')
-          
-          if (type === 'recovery') {
-            // Это сброс пароля - НЕ авторизуем автоматически
-            // Сначала принудительно выходим из сессии
-            console.log('Recovery callback detected, signing out to prevent auto-login...')
-            await supabase.auth.signOut()
-            
-            // Перенаправляем на reset-password с токенами из URL
-            const urlParams = new URLSearchParams(window.location.search)
-            const accessToken = urlParams.get('access_token')
-            const refreshToken = urlParams.get('refresh_token')
-            
-            if (accessToken && refreshToken) {
-              // Перенаправляем с токенами
-              router.push(`/reset-password?access_token=${accessToken}&refresh_token=${refreshToken}&type=recovery`)
-            } else {
-              // Если нет токенов, просто перенаправляем
-              router.push('/reset-password')
-            }
-            return
-          }
-          
-          if (type === 'signup') {
-            // Это подтверждение регистрации
-            alert('✅ Email успешно подтвержден! Добро пожаловать в lvlmart!')
-            router.push('/')
-            return
-          }
-          
-          // Обычное подтверждение email или вход
-          alert('✅ Авторизация успешна! Добро пожаловать!')
-          router.push('/')
-        } else {
-          // Нет сессии, перенаправляем на логин
-          alert('⚠️ Сессия истекла. Войдите в аккаунт заново')
-          router.push('/login')
-        }
-      } catch (error) {
-        console.error('Unexpected error:', error)
+        alert('✅ Авторизация успешна! Добро пожаловать!')
+        router.push('/')
+      } catch (err) {
+        console.error('Auth callback unexpected error:', err)
         alert('❌ Произошла неожиданная ошибка. Попробуйте войти в аккаунт')
         router.push('/login')
       }
@@ -73,7 +81,7 @@ export default function AuthCallback() {
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <p>Обрабатываем подтверждение email...</p>
+        <p>Обрабатываем подтверждение...</p>
       </div>
     </div>
   )
