@@ -1,6 +1,6 @@
 'use client'
 import { Suspense, useEffect, useMemo, useState, useRef } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { getCart, updateCartItem, removeFromCart, clearCart } from '@/utils/cart'
@@ -12,6 +12,7 @@ const TIPTOP_PUBLIC_ID = 'pk_2feee0eb113f61c95c847a68932b6'
 
 function BuyInner() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const id = searchParams.get('id')
   const qty = parseInt(searchParams.get('qty') || '1', 10)
 
@@ -160,7 +161,10 @@ function BuyInner() {
     widget.start(intentParams)
       .then((widgetResult) => {
         console.log('TipTopPay result:', widgetResult)
-        if (widgetResult && (widgetResult.success || widgetResult.status === 'Completed')) {
+        const isCancelled = widgetResult && widgetResult.status === 'Cancelled';
+        const isDeclined = widgetResult && (widgetResult.status === 'Declined' || widgetResult.status === 'Rejected' || widgetResult.success === false);
+        
+        if (!isCancelled && !isDeclined) {
 
           // Сохраняем заказ в БД
           const records = cart.map(item => {
@@ -182,9 +186,9 @@ function BuyInner() {
 
           clearCart()
           setCart([])
-          setPaymentStatus('success')
-          setPaymentMessage('Оплата прошла успешно! Спасибо за заказ.')
-        } else if (widgetResult && widgetResult.status === 'Cancelled') {
+          alert('Оплата прошла успешно! Спасибо за заказ.')
+          router.push('/')
+        } else if (isCancelled) {
           // Пользователь закрыл виджет — ничего не делаем
         } else {
           setPaymentStatus('error')
@@ -204,22 +208,6 @@ function BuyInner() {
         <h1 className="text-2xl font-semibold mb-4">Корзина</h1>
         <div className="card p-6">
           <div className="animate-pulse">Загрузка корзины...</div>
-        </div>
-      </main>
-    )
-  }
-
-  // Успешная оплата
-  if (paymentStatus === 'success') {
-    return (
-      <main className="pt-16 container-page py-8 px-4">
-        <div className="card p-8 text-center max-w-md mx-auto">
-          <div className="text-5xl mb-4">✅</div>
-          <h1 className="text-2xl font-bold text-green-600 mb-2">Оплата прошла!</h1>
-          <p className="text-gray-600 mb-6">{paymentMessage}</p>
-          <Link href="/" className="btn btn-primary w-full py-3">
-            Вернуться в каталог
-          </Link>
         </div>
       </main>
     )
@@ -468,12 +456,6 @@ function BuyInner() {
             </div>
           )}
 
-          {/* Тестовый режим */}
-          <div className="card p-3 bg-yellow-50 border border-yellow-200">
-            <p className="text-yellow-800 text-xs font-medium">
-              🧪 <strong>Тестовый режим.</strong> Реальных списаний не будет. Тестовая карта: <strong>4242 4242 4242 4242</strong>, любой срок и CVV.
-            </p>
-          </div>
 
           {/* Кнопки действий */}
           <div className="flex flex-col gap-3">

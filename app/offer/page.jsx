@@ -200,7 +200,7 @@ export default function OfferPage() {
           </section>
 
           <section className="mt-12 pt-8 border-t border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">📩 Реквизиты продавца:</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Реквизиты продавца:</h2>
             
             <div className="space-y-2 text-gray-700">
               <p><strong>Товарищество с ограниченной ответственностью «Buynel»</strong></p>
